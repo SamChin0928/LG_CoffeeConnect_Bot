@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+// import { prisma } from '@/lib/prisma'; // Removed Prisma import
 
 export async function POST(request: Request) {
     try {
@@ -10,25 +10,29 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
         }
 
-        const newcomer = await prisma.newcomer.create({
-            data: {
-                name,
-                email,
-                phone,
-            },
-        });
+        const newcomerId = crypto.randomUUID();
 
-        // innovative fire-and-forget sync (don't await to keep UI fast)
-        import('@/lib/sheets').then(mod => {
-            mod.appendNewcomerToSheet({
-                id: newcomer.id,
-                name: newcomer.name,
-                email: newcomer.email || '',
-                phone: newcomer.phone || ''
+        const newcomerData = {
+            id: newcomerId,
+            name,
+            email: email || '',
+            phone: phone || '',
+            createdAt: new Date().toISOString()
+        };
+
+        // Save directly to Google Sheets (awaiting to ensure success)
+        await import('@/lib/sheets').then(mod => {
+            return mod.appendNewcomerToSheet({
+                id: newcomerData.id,
+                name: newcomerData.name,
+                email: newcomerData.email,
+                phone: newcomerData.phone
             });
         });
 
-        return NextResponse.json(newcomer);
+        // Return the constructed newcomer object
+        // mimicking Prisma's return structure to keep frontend compatible
+        return NextResponse.json(newcomerData);
     } catch (error) {
         console.error('Registration error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

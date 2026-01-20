@@ -60,6 +60,7 @@ export async function searchNewcomersFromSheet(query: string): Promise<NewcomerS
                     console.error('Could not find name column in sheet');
                     newcomersCache = { data: [], timestamp: now };
                 } else {
+                    const idColIndex = findColIndex(headers, 'System ID', 'ID', 'UUID');
                     const allResults: NewcomerSearchResult[] = [];
 
                     dataRows.forEach((row, index) => {
@@ -73,8 +74,11 @@ export async function searchNewcomersFromSheet(query: string): Promise<NewcomerS
                         // The original logic filtered by valid name and !redeemed.
 
                         if (name && !redeemed) {
+                            // Use actual ID from sheet if available, otherwise fallback to row index
+                            const sheetId = idColIndex !== -1 ? row[idColIndex]?.toString() : '';
+
                             allResults.push({
-                                id: `row-${index + 2}`,
+                                id: sheetId || `row-${index + 2}`,
                                 name: name,
                                 phone: row[phoneColIndex]?.toString() || '',
                                 email: emailColIndex !== -1 ? row[emailColIndex]?.toString() || '' : '',
@@ -114,6 +118,15 @@ export async function searchNewcomersFromSheet(query: string): Promise<NewcomerS
         console.error('Error searching newcomers from sheet:', error);
         return [];
     }
+}
+
+export async function getNewcomerById(id: string): Promise<NewcomerSearchResult | null> {
+    // Ensure cache is populated
+    await searchNewcomersFromSheet('');
+
+    if (!newcomersCache) return null;
+
+    return newcomersCache.data.find(n => n.id === id) || null;
 }
 
 function calculateScore(query: string, name: string): number {

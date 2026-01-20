@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+// import { prisma } from '@/lib/prisma';
+import { getNewcomerById } from '@/lib/sheets';
 
 export async function GET(
     request: Request,
@@ -8,9 +9,7 @@ export async function GET(
     const id = (await params).id;
 
     try {
-        const newcomer = await prisma.newcomer.findUnique({
-            where: { id },
-        });
+        const newcomer = await getNewcomerById(id);
 
         if (!newcomer) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
