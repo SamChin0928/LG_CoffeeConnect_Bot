@@ -1,26 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --lg-black: #000000;
+  --lg-white: #ffffff;
+  /* Approximate gradient from lifegen.my - vibrant blue to pink to orange */
+  --lg-gradient: linear-gradient(135deg, #1e40af 0%, #d946ef 50%, #f97316 100%);
+  --lg-gradient-hover: linear-gradient(135deg, #1e3a8a 0%, #c026d3 50%, #ea580c 100%);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  body {
+    @apply bg-black text-white antialiased;
+    font-family: 'Inter', sans-serif;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Bricolage Grotesque', sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-300 rounded-full bg-transparent border-4 border-white hover:bg-white hover:text-black uppercase tracking-wide active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-black transition-all duration-300 rounded-full bg-white border-4 border-white hover:bg-black hover:text-white hover:border-white uppercase tracking-wide active:scale-95;
+  }
+
+  .card {
+    @apply bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-8;
+  }
+
+  .input-field {
+    @apply w-full px-6 py-4 bg-neutral-800 border-2 border-neutral-700 rounded-2xl focus:border-white focus:outline-none transition-colors text-white placeholder-neutral-500 font-medium;
+  }
 }
