@@ -52,7 +52,7 @@ export async function searchNewcomersFromSheet(query: string): Promise<NewcomerS
                 const nameColIndex = findColIndex(headers, 'Full Name', 'Visitor Name', 'Name');
                 const phoneColIndex = findColIndex(headers, 'Contact Number', 'Phone', 'Mobile');
                 const emailColIndex = findColIndex(headers, 'Email', 'Email Address');
-                const redeemedColIndex = findColIndex(headers, 'Redeemed Coffee', 'Redeemed');
+                const redeemedColIndex = findColIndex(headers, 'Redeemed Drink', 'Redeemed Coffee', 'Redeemed');
                 const timestampColIndex = 0; // Usually first column is timestamp
 
                 if (nameColIndex === -1) {
@@ -63,6 +63,11 @@ export async function searchNewcomersFromSheet(query: string): Promise<NewcomerS
                     const idColIndex = findColIndex(headers, 'System ID', 'ID', 'UUID');
                     const allResults: NewcomerSearchResult[] = [];
 
+                    // Calculate cut-off date (7 days ago to strictly include last Sunday)
+                    const cutOffDate = new Date();
+                    cutOffDate.setDate(cutOffDate.getDate() - 7);
+                    cutOffDate.setHours(0, 0, 0, 0); // Start of the day ensuring we catch everything from that date onwards
+
                     dataRows.forEach((row, index) => {
                         const name = row[nameColIndex]?.toString() || '';
                         const redeemed = redeemedColIndex !== -1 ? row[redeemedColIndex]?.toString()?.trim() : '';
@@ -70,20 +75,36 @@ export async function searchNewcomersFromSheet(query: string): Promise<NewcomerS
                         // Parse logic moved here to cache the FULL list
                         // We only cache UNREDEEMED users? Or all?
                         // Let's cache UNREDEEMED users for now as that's what we search against mostly.
-                        // Actually, if we want to search broadly, maybe cache everything?
                         // The original logic filtered by valid name and !redeemed.
 
                         if (name && !redeemed) {
-                            // Use actual ID from sheet if available, otherwise fallback to row index
-                            const sheetId = idColIndex !== -1 ? row[idColIndex]?.toString() : '';
+                            // Date Check
+                            const timestampStr = row[timestampColIndex]?.toString();
+                            let isRecent = true;
 
-                            allResults.push({
-                                id: sheetId || `row-${index + 2}`,
-                                name: name,
-                                phone: row[phoneColIndex]?.toString() || '',
-                                email: emailColIndex !== -1 ? row[emailColIndex]?.toString() || '' : '',
-                                createdAt: row[timestampColIndex]?.toString() || new Date().toISOString(),
-                            });
+                            if (timestampStr) {
+                                const rowDate = new Date(timestampStr);
+                                // Check if valid date
+                                if (!isNaN(rowDate.getTime())) {
+                                    // If older than cutOffDate, skip
+                                    if (rowDate < cutOffDate) {
+                                        isRecent = false;
+                                    }
+                                }
+                            }
+
+                            if (isRecent) {
+                                // Use actual ID from sheet if available, otherwise fallback to row index
+                                const sheetId = idColIndex !== -1 ? row[idColIndex]?.toString() : '';
+
+                                allResults.push({
+                                    id: sheetId || `row-${index + 2}`,
+                                    name: name,
+                                    phone: row[phoneColIndex]?.toString() || '',
+                                    email: emailColIndex !== -1 ? row[emailColIndex]?.toString() || '' : '',
+                                    createdAt: timestampStr || new Date().toISOString(),
+                                });
+                            }
                         }
                     });
 
@@ -397,10 +418,10 @@ export async function markRedemptionInSheet(newcomerId: string, newcomerName?: s
         // Find Column Indexes STRICTLY
         const idColIndex = headers.findIndex(h => h.trim() === 'ID' || h.trim() === 'System ID');
         const nameColIndex = findColIndex(headers, 'Full Name', 'Visitor Name');
-        const redeemedColIndex = findColIndex(headers, 'Redeemed Coffee');
+        const redeemedColIndex = findColIndex(headers, 'Redeemed Drink', 'Redeemed Coffee');
 
         if (redeemedColIndex === -1) {
-            console.error('Could not find "Redeemed Coffee" column');
+            console.error('Could not find "Redeemed Drink" column');
             return;
         }
 
